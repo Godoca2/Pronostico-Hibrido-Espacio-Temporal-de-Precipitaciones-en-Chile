@@ -1,5 +1,4 @@
-# Pronostico-Hibrido-Espacio-Temporal-de-Precipitaciones-en-Chile
-Pronóstico Híbrido Espacio-Temporal de Precipitaciones en Chile: Integrando Aprendizaje Profundo, Geoestadística y Teledetección
+# Pronóstico Híbrido Espacio-Temporal de Precipitaciones en Chile: Integrando Aprendizaje Profundo, Geoestadística y Teledetección
 
 Chile presenta una fuerte variabilidad espacio-temporal de precipitaciones, lo que impacta la gestión hídrica, la agricultura y la planificación territorial. Los modelos numéricos tradicionales tienen dificultades para representar las correlaciones espaciales y las dependencias no lineales que caracterizan el clima chileno.
 
