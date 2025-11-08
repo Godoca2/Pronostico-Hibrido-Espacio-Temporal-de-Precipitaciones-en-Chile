@@ -1,0 +1,9 @@
+name: CAPSTONE_PROJECT
+
+conda_env: conda.yaml
+
+entry_points:
+  main:
+    parameters:
+      epochs: {type: int, default: 10}
+    command: "python -u src/models/ae_dmd.py --epochs {epochs}"

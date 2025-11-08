@@ -1,0 +1,17 @@
+name: capstone_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - pandas
+  - xarray
+  - scipy
+  - scikit-learn
+  - matplotlib
+  - pytorch
+  - pip:
+    - mlflow
+    - jupyter

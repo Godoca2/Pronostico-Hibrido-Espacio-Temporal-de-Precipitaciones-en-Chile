@@ -1,0 +1,9 @@
+numpy
+pandas
+xarray
+scipy
+scikit-learn
+matplotlib
+torch
+mlflow
+jupyter
