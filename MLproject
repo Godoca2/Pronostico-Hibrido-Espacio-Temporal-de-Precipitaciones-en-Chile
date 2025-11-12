@@ -3,7 +3,15 @@ name: CAPSTONE_PROJECT
 conda_env: conda.yaml
 
 entry_points:
-  main:
+  train_ae_dmd:
     parameters:
-      epochs: {type: int, default: 10}
-    command: "python -u src/models/ae_dmd.py --epochs {epochs}"
+      latent_dim: {type: int, default: 100}
+      epochs: {type: int, default: 5}
+      batch_size: {type: int, default: 32}
+    command: >
+      python src/train_ae_dmd.py
+      --latent_dim {latent_dim}
+      --epochs {epochs}
+      --batch_size {batch_size}
+
+# Con esto puedes ejecutar mlflow run . -e train_ae_dmd -P latent_dim=128 -P epochs=10 -P batch_size=64.
