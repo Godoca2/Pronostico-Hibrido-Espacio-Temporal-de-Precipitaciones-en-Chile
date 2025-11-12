@@ -44,6 +44,7 @@ Lam et al. (2023) y Wong (2023) evidenciaron el potencial del AI aplicado a la p
 
 Cressie & Wikle (2011) fundamentaron la geoestadística espaciotemporal como marco probabilístico para modelar dependencias espaciales.
 
+<<<<<<< HEAD
 
 
 **Estructura base creada para el proyecto Capstone**.
@@ -69,3 +70,5 @@ Instrucciones rápidas:
 1. Crear un entorno Conda usando `conda.yaml`.
 2. Instalar dependencias con `pip install -r requirements.txt` o usar Conda según prefieras.
 3. Abrir los notebooks en `notebooks/` para comenzar el análisis y modelado.
+=======
+>>>>>>> 47ebac574335a08f7a0afe9044207724eea2b09a
