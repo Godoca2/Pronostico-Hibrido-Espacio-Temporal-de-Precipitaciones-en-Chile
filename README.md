@@ -44,31 +44,61 @@ Lam et al. (2023) y Wong (2023) evidenciaron el potencial del AI aplicado a la p
 
 Cressie & Wikle (2011) fundamentaron la geoestadística espaciotemporal como marco probabilístico para modelar dependencias espaciales.
 
-<<<<<<< HEAD
+---
 
+## Estructura del Proyecto
 
-**Estructura base creada para el proyecto Capstone**.
+**Estructura base creada para el proyecto Capstone**:
 
-Estructura principal:
+```
+CAPSTONE_PROJECT/
+│
+├── data/
+│   ├── raw/              # datos originales (ERA5, CHIRPS, MODIS)
+│   ├── processed/        # datos interpolados y normalizados
+│   └── models/           # pesos y artefactos (.h5, .pkl, etc.)
+│
+├── notebooks/
+│   ├── 01_EDA.ipynb
+│   ├── 02_DL_DMD_Forecast.ipynb
+│   └── 03_KoVAE_Test.ipynb
+│
+├── src/
+│   ├── models/
+│   │   ├── ae_dmd.py
+│   │   ├── kovae.py
+│   │   └── __init__.py
+│   ├── utils/
+│   │   ├── data_loader.py
+│   │   ├── metrics.py
+│   │   └── __init__.py
+│   └── __init__.py
+│
+├── reports/
+│   └── figures/
+│
+├── mlruns/
+│
+├── README.md
+├── requirements.txt
+├── conda.yaml
+└── MLproject
+```
 
-- data/
-  - raw/        # datos originales (ERA5, CHIRPS, MODIS)
-  - processed/  # datos interpolados y normalizados
-  - models/     # pesos y artefactos (.h5, .pkl, etc.)
-- notebooks/
-  - 01_EDA.ipynb
-  - 02_DL_DMD_Forecast.ipynb
-  - 03_KoVAE_Test.ipynb
-- src/
-  - models/
-  - utils/
-- reports/
-  - figures/
-- mlruns/
+## Instrucciones de Uso
 
-Instrucciones rápidas:
-1. Crear un entorno Conda usando `conda.yaml`.
-2. Instalar dependencias con `pip install -r requirements.txt` o usar Conda según prefieras.
-3. Abrir los notebooks en `notebooks/` para comenzar el análisis y modelado.
-=======
->>>>>>> 47ebac574335a08f7a0afe9044207724eea2b09a
+1. Crear un entorno Conda usando `conda.yaml`:
+   ```bash
+   conda env create -f conda.yaml
+   conda activate capstone_env
+   ```
+
+2. Instalar dependencias adicionales:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Abrir los notebooks en `notebooks/` para comenzar el análisis y modelado:
+   ```bash
+   jupyter notebook
+   ```
