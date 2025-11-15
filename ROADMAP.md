@@ -1,4 +1,4 @@
-# 🗺️ Roadmap del Proyecto - Pronóstico Híbrido de Precipitaciones
+# Roadmap del Proyecto - Pronóstico Híbrido de Precipitaciones
 
 ## Estado Actual: Fase de Inicialización ✅
 
@@ -13,7 +13,7 @@
 
 ---
 
-## 🚀 Fase 1: Preparación y Exploración de Datos (Semanas 1-2)
+## Fase 1: Preparación y Exploración de Datos (Semanas 1-2)
 
 ### 1.1 Completar EDA Espacio-Temporal
 - [ ] Ejecutar notebook `01A_Eda_spatiotemporal.ipynb` completo
@@ -45,7 +45,7 @@
 
 ---
 
-## 🧠 Fase 2: Implementación de Modelos Base (Semanas 3-4)
+## Fase 2: Implementación de Modelos Base (Semanas 3-4)
 
 ### 2.1 Autoencoder + DMD (Baseline)
 - [ ] Implementar `ae_keras.py` completo:
@@ -83,7 +83,7 @@
 
 ---
 
-## 🔬 Fase 3: Modelo Avanzado KoVAE (Semanas 5-6)
+## Fase 3: Modelo Avanzado KoVAE (Semanas 5-6)
 
 ### 3.1 Implementación KoVAE
 - [ ] Estudiar paper original KoVAE (operador de Koopman)
@@ -116,7 +116,7 @@
 
 ---
 
-## 🌍 Fase 4: Integración Geoespacial (Semanas 7-8)
+## Fase 4: Integración Geoespacial (Semanas 7-8)
 
 ### 4.1 Pronóstico Espacialmente Explícito
 - [ ] Extender modelos para output multipoint
@@ -140,7 +140,7 @@
 
 ---
 
-## 📈 Fase 5: Producción y Despliegue (Semanas 9-10)
+## Fase 5: Producción y Despliegue (Semanas 9-10)
 
 ### 5.1 Model Registry y Versionado
 - [ ] Registrar modelo final en MLflow Registry
@@ -170,7 +170,7 @@
 
 ---
 
-## 🎓 Criterios de Éxito del Proyecto
+##  Criterios de Éxito del Proyecto
 
 ### Mínimo Viable (Aprobación)
 1. Pipeline completo datos → modelo → predicción
@@ -195,7 +195,7 @@
 
 ---
 
-## 📅 Cronograma Sugerido (10 semanas)
+## Cronograma Sugerido (10 semanas)
 
 | Semana | Fase | Hitos Clave |
 |--------|------|-------------|
@@ -207,7 +207,7 @@
 
 ---
 
-## 🛠️ Stack Tecnológico Confirmado
+## Stack Tecnológico Confirmado
 
 - **Datos**: xarray, netCDF4, pandas, geopandas
 - **Geoestadística**: PyKrige, scikit-gstat, cartopy
@@ -219,7 +219,7 @@
 
 ---
 
-## 💡 Consejos Prácticos
+##  Consejos Prácticos
 
 1. **Commitea frecuentemente**: Cada avance importante al repo
 2. **Usa MLflow desde el día 1**: Rastrea TODO (hasta experimentos fallidos)
@@ -230,7 +230,7 @@
 
 ---
 
-## 📚 Referencias Técnicas Clave
+## Referencias Técnicas Clave
 
 1. **PyDMD**: Paper adjunto en `/doc/`
 2. **KoVAE**: Buscar papers recientes sobre Koopman VAE
