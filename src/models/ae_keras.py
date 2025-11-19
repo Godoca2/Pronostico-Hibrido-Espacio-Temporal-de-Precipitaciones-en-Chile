@@ -1,5 +1,3 @@
-ae_keras.py
-de series temporales climáticas (ej. precipitación).
 """ae_keras.py
 =================
 Autoencoders densos y LSTM en Keras para reducir dimensionalidad de series

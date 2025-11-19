@@ -297,21 +297,26 @@ Validación del modelo en cuencas prioritarias para planificación hídrica y es
 - Sistema de guardado/carga de resultados en pickle (5.5 MB)
 - Rankings automáticos: AE+DMD 🥇 en todos los horizontes
 
-**✅ Experimentos de Hiperparámetros Preparados:**
-- Notebook `05_Hyperparameter_Experiments.ipynb` creado
-- Grid de 13 configuraciones definido:
-  - Latent dim: [32, 64, 128, 256]
-  - SVD rank: [0.90, 0.95, 0.99, 1.0]
-  - Dilations: [[1,2,4,8], [1,3,9,27], [1,2,4]]
-  - Epochs: [50, 100, 150]
-- Pipeline automatizado con función `run_experiment()`
-- Análisis comparativo con 6 visualizaciones preparadas
+**✅ Experimentos de Hiperparámetros Completados:**
+- Notebook `05_Hyperparameter_Experiments.ipynb` ejecutado
+- Grid de 13 configuraciones evaluado
+- **Mejor configuración:** Dilations [1,3,9,27] + Latent 64 → MAE 1.934 mm/día (17.3% mejora sobre baseline)
+- Resultados guardados: `experiments_summary.csv`, `hyperparameter_analysis.png`
+
+**✅ Análisis de Interpretabilidad DMD:**
+- Notebook `06_DMD_Interpretability.ipynb` ejecutado (19 Nov 2025)
+- DMD entrenado en espacio latente: 23 modos, 100% estables (|λ|≤1)
+- Top 5 modos decodificados a espacio físico (157×41)
+- Análisis por macrozonas: Centro (mayor energía en modo #1), Norte y Sur (balanceados en modos #2-5)
+- Ciclos identificados: Mayoría de modos de muy baja frecuencia (>60 días o estacionarios)
+- Figuras generadas: eigenvalues complex plane, spatial modes decoded, energy by zone
+- Resultados guardados: `dmd_interpretability_results.pkl` (128 KB)
 
 ### ⏳ **Pendiente en Fase 3:**
 
 - [x] ~~Ejecutar 13 experimentos de hiperparámetros~~ ✅ **Completado 19 Nov 2025**
 - [x] ~~Análisis de sensibilidad y selección de configuración óptima~~ ✅ **Completado 19 Nov 2025**
-- [ ] Interpretabilidad DMD: decodificar modos a espacio físico
+- [x] ~~Interpretabilidad DMD: decodificar modos a espacio físico~~ ✅ **Completado 19 Nov 2025**
 - [ ] Implementación KoVAE (opcional, depende de resultados AE+DMD)
 - [ ] Integración CHIRPS/GPM para validación cruzada
 - [ ] Resolver conflictos MLflow (protobuf/pyarrow)
