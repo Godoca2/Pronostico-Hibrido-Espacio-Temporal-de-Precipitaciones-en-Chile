@@ -309,7 +309,12 @@ Validación del modelo en cuencas prioritarias para planificación hídrica y es
 - Top 5 modos decodificados a espacio físico (157×41)
 - Análisis por macrozonas: Centro (mayor energía en modo #1), Norte y Sur (balanceados en modos #2-5)
 - Ciclos identificados: Mayoría de modos de muy baja frecuencia (>60 días o estacionarios)
-- Figuras generadas: eigenvalues complex plane, spatial modes decoded, energy by zone
+- **Visualizaciones temporales añadidas** (19 Nov 2025):
+  - Serie temporal punto individual (Centro Chile, lat_idx=80, lon_idx=20): Histórico + Predicción DMD h=1 (30 días forecast)
+  - Comparación 3 macrozonas (Norte/Centro/Sur): Histórico vs Predicción DMD alineados
+  - Evolución componentes latentes: 10 dimensiones, 15 pasos de predicción con codificación por color
+- **Hallazgos visuales**: Predicciones DMD subestiman amplitud de eventos de precipitación pero capturan patrones temporales (zona Sur con mejor trazado histórico)
+- Figuras generadas (6 total): eigenvalues complex plane, spatial modes decoded, energy by zone, temporal evolution point, temporal zones, latent evolution
 - Resultados guardados: `dmd_interpretability_results.pkl` (128 KB)
 
 ### ⏳ **Pendiente en Fase 3:**

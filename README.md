@@ -308,7 +308,8 @@ El notebook `03_AE_DMD_Training.ipynb` ejecuta el pipeline completo:
   - Norte: Balance distribuido modos #2-5 (0.330-0.355)
   - Sur: Energía uniforme moderada (0.280-0.340)
 - **Períodos identificados**: Mayoría de muy baja frecuencia (>60 días o estacionarios)
-- Figuras generadas: eigenvalues complex plane, spatial modes, energy by zone
+- **Visualizaciones temporales**: Serie temporal punto individual (Centro Chile), comparación 3 macrozonas (Norte/Centro/Sur), evolución componentes latentes DMD (10 dimensiones, 15 pasos)
+- Figuras generadas: 6 figuras (eigenvalues, spatial modes, energy zones, temporal evolution point, temporal zones, latent evolution)
 - Resultados guardados: `dmd_interpretability_results.pkl` (128 KB)
 
 ### Próximos Pasos (Opcionales)
