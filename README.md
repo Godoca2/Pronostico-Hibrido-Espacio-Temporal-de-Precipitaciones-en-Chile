@@ -104,7 +104,8 @@ CAPSTONE_PROJECT/
 │   ├── 03_AE_DMD_Training.ipynb               # ✅ Entrenamiento AE+DMD baseline
 │   ├── 04_Advanced_Metrics.ipynb              # ✅ Métricas avanzadas (NSE, SS)
 │   ├── 04_KoVAE_Test.ipynb                    # ⏳ KoVAE (preparado, no ejecutado)
-│   └── 05_Hyperparameter_Experiments.ipynb    # ✅ Optimización 13 configs
+│   ├── 05_Hyperparameter_Experiments.ipynb    # ✅ Optimización 13 configs
+│   └── 06_DMD_Interpretability.ipynb          # ✅ Interpretabilidad DMD (modos físicos)
 │
 ├── src/
 │   ├── models/
@@ -127,7 +128,11 @@ CAPSTONE_PROJECT/
 │   └── figures/                                # Visualizaciones generadas
 │       ├── ae_dmd_spatial_weights.png
 │       ├── ae_training_curves.png
-│       └── ae_reconstruction_examples.png
+│       ├── ae_reconstruction_examples.png
+│       ├── hyperparameter_analysis.png         # Optimización hiperparámetros
+│       ├── dmd_eigenvalues_complex_plane.png   # Eigenvalores DMD
+│       ├── dmd_spatial_modes_decoded.png       # Top 5 modos decodificados
+│       └── dmd_energy_by_zone.png              # Energía por macrozona
 │
 ├── mlruns/                                     # Tracking MLflow (temporal deshabilitado)
 │
@@ -288,16 +293,37 @@ El notebook `03_AE_DMD_Training.ipynb` ejecuta el pipeline completo:
 - Test MSE: 0.412, MAE: 0.319, RMSE: 0.642
 - Tiempo entrenamiento: ~56 segundos (con GPU)
 
-### Próximos Pasos
+**Optimización de Hiperparámetros** (`05_Hyperparameter_Experiments.ipynb`):
+- 13 configuraciones evaluadas (latent_dim, SVD rank, dilations, epochs)
+- **Mejor configuración**: Dilations [1,3,9,27] + Latent 64
+- **MAE final**: 1.934 mm/día (17.3% mejora sobre baseline 2.339 mm/día)
+- Todos los modos DMD 100% estables (|λ|≤1)
+- Tiempo total: ~5 minutos (13 experimentos)
+
+**Interpretabilidad DMD** (`06_DMD_Interpretability.ipynb`):
+- DMD entrenado en espacio latente: **23 modos**, 100% estables
+- Top 5 modos decodificados de latent (64-dim) → espacio físico (157×41)
+- **Análisis por macrozonas**:
+  - Centro: Mayor energía en modo #1 (0.382)
+  - Norte: Balance distribuido modos #2-5 (0.330-0.355)
+  - Sur: Energía uniforme moderada (0.280-0.340)
+- **Períodos identificados**: Mayoría de muy baja frecuencia (>60 días o estacionarios)
+- Figuras generadas: eigenvalues complex plane, spatial modes, energy by zone
+- Resultados guardados: `dmd_interpretability_results.pkl` (128 KB)
+
+### Próximos Pasos (Opcionales)
 
 Ver `ROADMAP.md` para tareas pendientes:
 
-1. **DMD en espacio latente** - Aplicar PyDMD sobre embeddings 64-dim
-2. **Desnormalización** - Convertir métricas a mm/día reales
-3. **Análisis por macrozonas** - Evaluar Norte/Centro/Sur separadamente
-4. **Baselines** - Comparar con persistencia y climatología
-5. **KoVAE** - Implementar operador de Koopman (Fase 3)
-6. **Resolver MLflow** - Conflicto protobuf (MLflow 3.6 vs TF 2.10)
+1. ✅ ~~**DMD en espacio latente**~~ - Completado (23 modos, 100% estables)
+2. ✅ ~~**Desnormalización**~~ - Métricas en mm/día reales
+3. ✅ ~~**Análisis por macrozonas**~~ - Norte/Centro/Sur evaluados
+4. ✅ ~~**Baselines**~~ - Persistencia y climatología implementados
+5. ✅ ~~**Optimización hiperparámetros**~~ - 13 configs, MAE 1.934 mm/día
+6. ✅ ~~**Interpretabilidad DMD**~~ - Modos decodificados a espacio físico
+7. **Validación CHIRPS** - Comparar con datos satelitales (opcional)
+8. **KoVAE** - Implementar operador de Koopman variacional (opcional)
+9. **Resolver MLflow** - Conflicto protobuf (MLflow 3.6 vs TF 2.10)
 
 ---
 
@@ -305,7 +331,8 @@ Ver `ROADMAP.md` para tareas pendientes:
 
 **Última actualización**: 19 noviembre 2025  
 **Responsable**: César Godoy Delaigue  
-**Fase actual**: Fase 2 - Implementación AE-DMD (En Progreso)
+**Fase actual**: Fase 2 - Implementación AE-DMD (**Completada 95%**)
+**Notebooks ejecutados**: 6/8 (75% implementación + 25% extensiones opcionales)
 
 ### Stack Tecnológico Confirmado
 
