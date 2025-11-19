@@ -122,54 +122,62 @@
 - ✅ Superioridad vs baselines demostrada
 - ✅ Análisis espacial completo
 - ✅ Notebook completo con resultados reproducibles
+- ✅ Resultados guardados en pickle (`forecast_results_2020.pkl`)
 
 ---
 
 ## 🔄 Fase 3: Optimización y Análisis Avanzado (En Progreso)
 
-### 3.1 Experimentos con Hiperparámetros
+### 3.0 Métricas Avanzadas ✅
+
+- [x] Implementar `src/utils/metrics.py` completo:
+  - NSE (Nash-Sutcliffe Efficiency)
+  - Skill Score vs persistence
+  - Skill Score vs climatología
+  - Métricas por tipo de evento (seco/normal/extremo)
+  - Análisis de residuos (percentiles, skewness, kurtosis)
+- [x] Notebook `04_Advanced_Metrics.ipynb` creado y ejecutado
+- [x] Análisis comparativo con datos reales:
+  - **Rankings por horizonte**: AE+DMD 🥇 en todos (1d, 3d, 7d)
+  - Persistence 🥈, Climatology 🥉
+  - Mejoras relativas: +10.9% vs Persistence, +16.5% vs Climatología (1 día)
+- [x] Visualizaciones comparativas exportadas
+- [x] Tabla resumen guardada: `metrics_summary.csv`
+- [x] Sistema de carga/guardado de resultados implementado
+
+### 3.1 Experimentos con Hiperparámetros 🔄
 
 - [ ] Variar `latent_dim`: [32, 64, 128, 256]
 - [ ] Variar SVD rank DMD: [0.9, 0.95, 0.99, 1.0]
 - [ ] Experimentos con arquitecturas:
   - LSTM encoder vs CNN encoder
-  - Diferentes dilations
+  - Diferentes dilations [1,2,4,8] vs [1,3,9,27]
   - Skip connections (U-Net style)
 - [ ] Registrar >= 20 experimentos MLflow
-- [ ] Análisis de sensibilidad
+- [ ] Análisis de sensibilidad con pandas/seaborn
+- [ ] Identificar configuración óptima
 
-### 3.2 Métricas Avanzadas
-
-- [ ] Implementar `src/utils/metrics.py` completo:
-  - Nash-Sutcliffe Efficiency (NSE)
-  - Skill Score vs persistence
-  - Distribuciones de residuos
-  - Análisis de extremos (percentiles 95, 99)
-- [ ] Métricas por evento meteorológico:
-  - Días secos (<0.1 mm)
-  - Días normales (0.1-10 mm)
-  - Días extremos (>10 mm)
-
-### 3.3 Validación Temporal Extendida
+### 3.2 Validación Temporal Extendida
 
 - [ ] Validar en múltiples años (2019-2023)
 - [ ] Análisis estacional (DJF, MAM, JJA, SON)
 - [ ] Eventos extremos: Niño/Niña, sequías, sistemas frontales
 - [ ] Skill scores por estación del año
 
-### 3.4 Interpretabilidad DMD
+### 3.3 Interpretabilidad DMD 🔄
 
-- [ ] Análisis de modos dominantes
-- [ ] Visualizar modos en espacio físico (decodificar)
-- [ ] Correlación modos DMD con patrones meteorológicos
-- [ ] Frecuencias vs ciclos sinópticos conocidos
+- [ ] Análisis de modos dominantes (top 5-10 modos)
+- [ ] Visualizar modos en espacio físico (decodificar con decoder)
+- [ ] Correlación modos DMD con patrones meteorológicos conocidos
+- [ ] Frecuencias dominantes vs ciclos sinópticos (2-7 días)
+- [ ] Estabilidad de modos (análisis de |λ|)
 
 **Entregables Fase 3:**
 
-- >= 20 experimentos MLflow documentados
-- Notebook de análisis de hiperparámetros
-- Métricas avanzadas implementadas
-- Análisis de interpretabilidad DMD
+- ✅ Métricas avanzadas implementadas y validadas
+- 🔄 >= 20 experimentos MLflow documentados (en progreso)
+- ⏳ Notebook de análisis de hiperparámetros
+- ⏳ Análisis de interpretabilidad DMD
 
 ---
 
@@ -261,11 +269,13 @@
 |------|--------|-------------|-------------|
 | Fase 1: EDA y Datos | ✅ Completada | 100% | Pipeline ERA5, geoestadística, visualizaciones |
 | Fase 2: AE+DMD Base | ✅ Completada | 100% | Modelo entrenado, forecasting, baselines |
-| Fase 3: Optimización | 🔄 En Progreso | 10% | Experimentos iniciados |
+| Fase 3: Optimización | 🔄 En Progreso | 25% | Métricas avanzadas ✅, experimentos iniciados |
 | Fase 4: Geoespacial | ⏳ Pendiente | 0% | Casos de estudio, cuencas |
 | Fase 5: Documentación | ⏳ Pendiente | 0% | Paper, presentación |
 
-**Progreso Total: 42% (2/5 fases completas)**
+## Progreso Total
+
+**45% completado (2/5 fases completas + Fase 3 al 25%)**
 
 ---
 
@@ -274,10 +284,11 @@
 ### Esta Semana (Semana 3)
 
 1. ✅ Actualizar ROADMAP con Fase 2 completa
-2. [ ] Implementar `src/utils/metrics.py` con NSE y Skill Score
-3. [ ] Experimentos con diferentes `latent_dim` (32, 128, 256)
-4. [ ] Análisis de sensibilidad SVD rank DMD
-5. [ ] Visualizar modos DMD en espacio físico
+2. ✅ Implementar `src/utils/metrics.py` con NSE y Skill Score
+3. ✅ Notebook 04_Advanced_Metrics.ipynb completo
+4. 🔄 Experimentos con diferentes `latent_dim` (32, 128, 256) - SIGUIENTE
+5. [ ] Análisis de sensibilidad SVD rank DMD
+6. [ ] Visualizar modos DMD en espacio físico
 
 ### Próxima Semana (Semana 4)
 

@@ -116,3 +116,134 @@ def evaluate_all(y_true: Union[np.ndarray, list],
         'PBIAS': pbias(y_true, y_pred),
         'SkillScore': skill_score_persistence(y_true, y_pred)
     }
+
+
+def evaluate_by_event_type(y_true: Union[np.ndarray, list],
+                           y_pred: Union[np.ndarray, list],
+                           thresholds: dict = None) -> dict:
+    """Evalúa métricas por tipo de evento meteorológico.
+    
+    Parameters
+    ----------
+    y_true : array-like
+        Valores observados (mm/día)
+    y_pred : array-like
+        Valores predichos (mm/día)
+    thresholds : dict, optional
+        Umbrales para clasificar eventos. Default:
+        {'dry': 0.1, 'normal': 10.0}
+        - Días secos: < dry
+        - Días normales: dry <= x < normal
+        - Días extremos: >= normal
+    
+    Returns
+    -------
+    dict
+        Métricas por categoría: 'dry', 'normal', 'extreme'
+    """
+    if thresholds is None:
+        thresholds = {'dry': 0.1, 'normal': 10.0}
+    
+    y_true = np.asarray(y_true).flatten()
+    y_pred = np.asarray(y_pred).flatten()
+    
+    # Clasificar eventos
+    dry_mask = y_true < thresholds['dry']
+    extreme_mask = y_true >= thresholds['normal']
+    normal_mask = ~(dry_mask | extreme_mask)
+    
+    results = {}
+    
+    for event_type, mask in [('dry', dry_mask), 
+                              ('normal', normal_mask), 
+                              ('extreme', extreme_mask)]:
+        if mask.sum() > 0:
+            results[event_type] = {
+                'count': int(mask.sum()),
+                'MAE': mae(y_true[mask], y_pred[mask]),
+                'RMSE': rmse(y_true[mask], y_pred[mask]),
+                'PBIAS': pbias(y_true[mask], y_pred[mask])
+            }
+        else:
+            results[event_type] = {
+                'count': 0,
+                'MAE': np.nan,
+                'RMSE': np.nan,
+                'PBIAS': np.nan
+            }
+    
+    return results
+
+
+def residual_analysis(y_true: Union[np.ndarray, list],
+                     y_pred: Union[np.ndarray, list]) -> dict:
+    """Análisis estadístico de residuos.
+    
+    Returns
+    -------
+    dict
+        Estadísticas de residuos: mean, std, percentiles (5, 25, 50, 75, 95)
+    """
+    y_true = np.asarray(y_true).flatten()
+    y_pred = np.asarray(y_pred).flatten()
+    
+    residuals = y_true - y_pred
+    
+    return {
+        'mean': float(np.mean(residuals)),
+        'std': float(np.std(residuals)),
+        'min': float(np.min(residuals)),
+        'max': float(np.max(residuals)),
+        'p5': float(np.percentile(residuals, 5)),
+        'p25': float(np.percentile(residuals, 25)),
+        'p50': float(np.percentile(residuals, 50)),  # mediana
+        'p75': float(np.percentile(residuals, 75)),
+        'p95': float(np.percentile(residuals, 95)),
+        'skewness': float(_skewness(residuals)),
+        'kurtosis': float(_kurtosis(residuals))
+    }
+
+
+def _skewness(x: np.ndarray) -> float:
+    """Coeficiente de asimetría (skewness)."""
+    n = len(x)
+    mean = np.mean(x)
+    std = np.std(x)
+    return float(np.sum((x - mean)**3) / (n * std**3 + 1e-10))
+
+
+def _kurtosis(x: np.ndarray) -> float:
+    """Coeficiente de curtosis (kurtosis)."""
+    n = len(x)
+    mean = np.mean(x)
+    std = np.std(x)
+    return float(np.sum((x - mean)**4) / (n * std**4 + 1e-10) - 3)
+
+
+def skill_score_climatology(y_true: Union[np.ndarray, list],
+                            y_pred: Union[np.ndarray, list],
+                            climatology: Union[np.ndarray, list]) -> float:
+    """Skill Score contra baseline de climatología.
+    
+    Parameters
+    ----------
+    y_true : array-like
+        Valores observados
+    y_pred : array-like
+        Valores predichos
+    climatology : array-like
+        Valores climatológicos (media histórica por día del año)
+    
+    Returns
+    -------
+    float
+        SS = 1 - MSE_modelo / MSE_climatología
+    """
+    y_true = np.asarray(y_true).flatten()
+    y_pred = np.asarray(y_pred).flatten()
+    climatology = np.asarray(climatology).flatten()
+    
+    mse_model = mse(y_true, y_pred)
+    mse_clim = mse(y_true, climatology)
+    
+    return float(1 - (mse_model / (mse_clim + 1e-10)))
