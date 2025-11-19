@@ -46,6 +46,37 @@ Cressie & Wikle (2011) fundamentaron la geoestadística espaciotemporal como mar
 
 ---
 
+## Glosario de Conceptos Técnicos
+
+### **Autoencoder (AE)**
+Red neuronal no supervisada que comprime datos (encoder) y los reconstruye (decoder). Usado para capturar patrones espaciales de precipitación en representación compacta.
+
+### **Espacio Latente**
+Representación de menor dimensión (ej: 64-dim) de datos originales (6437 celdas). Reduce complejidad preservando información esencial.
+
+### **DMD (Descomposición Modal Dinámica)**
+Técnica data-driven que descompone sistemas dinámicos en modos espacio-temporales coherentes. Extrae patrones + frecuencias para pronósticos.
+
+### **KoVAE (Koopman Variational Autoencoder)**
+Extensión probabilística del Autoencoder que usa el Operador de Koopman para representar dinámicas no lineales como lineales. Incluye incertidumbre.
+
+### **Variograma**
+Función que cuantifica correlación espacial vs distancia. Parámetros: nugget (error), sill (varianza máx), range (alcance correlación).
+
+### **Kriging**
+Interpolación geoestadística óptima que genera campos continuos + varianza de estimación a partir de observaciones puntuales.
+
+### **Dilated Convolutions**
+Convoluciones con "huecos" que expanden campo receptivo sin aumentar parámetros. Captura contexto multi-escala.
+
+### **Métricas**
+- **MAE**: Error promedio absoluto (mm/día)
+- **RMSE**: Raíz error cuadrático medio
+- **NSE**: Eficiencia Nash-Sutcliffe (hidrología)
+- **Skill Score**: Mejora % vs baseline
+
+---
+
 ## Estructura del Proyecto
 
 **Estructura actualizada del proyecto Capstone**:
@@ -66,11 +97,14 @@ CAPSTONE_PROJECT/
 │       └── training_metrics.csv                # Historial entrenamiento
 │
 ├── notebooks/
-│   ├── 01_EDA.ipynb                            # EDA básico
-│   ├── 01A_Eda_spatiotemporal.ipynb           # EDA espacial-temporal (macrozonas)
-│   ├── 02_Geoestadistica.ipynb                 # Variogramas y kriging
-│   ├── 03_AE_DMD_Training.ipynb               # Entrenamiento AE-DMD (ACTUAL)
-│   └── 03_KoVAE_Test.ipynb                     # Pruebas KoVAE (futuro)
+│   ├── 01_EDA.ipynb                            # ✅ EDA básico
+│   ├── 01A_Eda_spatiotemporal.ipynb           # ✅ EDA espacial-temporal (macrozonas)
+│   ├── 02_DL_DMD_Forecast.ipynb               # 📚 Ejemplo Prof. Herrera (didáctico)
+│   ├── 02_Geoestadistica_Variogramas_Kriging.ipynb  # ✅ Variogramas y kriging
+│   ├── 03_AE_DMD_Training.ipynb               # ✅ Entrenamiento AE+DMD baseline
+│   ├── 04_Advanced_Metrics.ipynb              # ✅ Métricas avanzadas (NSE, SS)
+│   ├── 04_KoVAE_Test.ipynb                    # ⏳ KoVAE (preparado, no ejecutado)
+│   └── 05_Hyperparameter_Experiments.ipynb    # ✅ Optimización 13 configs
 │
 ├── src/
 │   ├── models/

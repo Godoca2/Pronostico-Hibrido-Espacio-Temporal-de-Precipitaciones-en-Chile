@@ -64,6 +64,92 @@ Integrar Koopman con Autoencoders permite mapear las series climáticas a un esp
 
 El modelo **KoVAE** (Koopman Variational Autoencoder; Naiman et al., 2024) incorpora este operador en el entrenamiento, mezclando aprendizaje profundo y dinámica lineal para pronósticos probabilísticos de series irregulares.
 
+-----------
+
+# **2.3 Glosario de Conceptos Técnicos**
+
+### **Autoencoder (AE)**
+Red neuronal no supervisada que aprende una representación comprimida (encoding) de los datos de entrada y luego los reconstruye (decoding). Consta de:
+- **Encoder:** Comprime datos de alta dimensión (ej: 6437 celdas espaciales) a un espacio latente de menor dimensión (ej: 64 dimensiones)
+- **Decoder:** Reconstruye los datos originales desde el espacio latente
+- **Propósito en este proyecto:** Capturar patrones espaciales de precipitación en representación compacta para facilitar análisis temporal
+
+### **Espacio Latente**
+Representación de menor dimensión donde se codifican las características esenciales de los datos originales. En este proyecto:
+- Dimensión original: 157×41 = 6437 celdas espaciales
+- Dimensión latente: 32-256 (configurable)
+- **Ventaja:** Reduce complejidad computacional y ruido, preservando información relevante
+
+### **Descomposición Modal Dinámica (DMD)**
+Técnica data-driven que descompone sistemas dinámicos complejos en modos espacio-temporales coherentes:
+- **Entrada:** Secuencia temporal en espacio latente
+- **Salida:** Modos DMD (patrones espaciales) + eigenvalores (frecuencias/tasas de decaimiento)
+- **Modos estables:** |λ| < 1.0 (no divergen en el tiempo)
+- **Propósito:** Modelar evolución temporal lineal de patrones latentes para hacer pronósticos
+
+### **KoVAE (Koopman Variational Autoencoder)**
+Extensión probabilística del Autoencoder que incorpora el **Operador de Koopman**:
+- **Operador de Koopman:** Marco teórico que representa dinámicas **no lineales** como transformaciones **lineales** en un espacio de mayor dimensión
+- **Ventaja sobre AE+DMD:** Incluye incertidumbre probabilística (distribuciones en lugar de puntos)
+- **Estado en proyecto:** Implementación opcional pendiente (notebook 04_KoVAE_Test preparado)
+
+### **Geoestadística**
+Conjunto de técnicas para modelar correlaciones espaciales:
+
+#### **Variograma**
+Función que cuantifica cómo la similitud entre observaciones disminuye con la distancia:
+- **Nugget:** Variabilidad a distancia cero (error de medición)
+- **Sill:** Varianza máxima (meseta)
+- **Range:** Distancia a la cual se alcanza el sill (correlación espacial)
+- **Modelo ajustado:** Spherical con range ~913 km para Chile
+
+#### **Kriging**
+Método de interpolación geoestadística óptima (BLUE: Best Linear Unbiased Estimator):
+- **Entrada:** Observaciones puntuales + variograma ajustado
+- **Salida:** Campo continuo interpolado + varianza de estimación
+- **Varianza de kriging:** Métrica de incertidumbre espacial (usada para ponderar loss function)
+
+### **Dilated Convolutions**
+Convoluciones con "huecos" que expanden el campo receptivo sin aumentar parámetros:
+- **Dilation rate:** Espaciado entre elementos del kernel (ej: [1,2,4,8])
+- **Campo receptivo:** Región espacial que influye en cada neurona
+- **Ventaja:** Captura contexto multi-escala (local → regional)
+- **Mejor configuración hallada:** [1,3,9,27] captura patrones temporales de 2-27 días
+
+### **SVD Rank (Singular Value Decomposition)**
+Umbral para truncar descomposición en valores singulares:
+- **SVD rank 0.99:** Retiene modos que explican 99% de varianza
+- **SVD rank 1.0:** Retiene todos los modos (puede causar inestabilidad numérica)
+- **Propósito en DMD:** Reducir ruido y mejorar estabilidad de modos dinámicos
+
+### **Métricas de Evaluación**
+
+#### **MAE (Mean Absolute Error)**
+Error promedio absoluto en mm/día. **Métrica principal** del proyecto por su interpretabilidad física.
+
+#### **RMSE (Root Mean Squared Error)**
+Raíz del error cuadrático medio. Penaliza más los errores grandes que MAE.
+
+#### **NSE (Nash-Sutcliffe Efficiency)**
+Métrica hidrológica estándar:
+- NSE = 1: Predicción perfecta
+- NSE = 0: Predicción igual a climatología
+- NSE < 0: Peor que climatología
+
+#### **Skill Score (SS)**
+Mejora porcentual respecto a baseline de persistencia:
+- SS = (MAE_persistence - MAE_model) / MAE_persistence × 100%
+
+### **Baselines de Comparación**
+
+#### **Persistencia**
+Pronosticar que la precipitación de mañana será igual a la de hoy. Baseline más simple.
+
+#### **Climatología**
+Pronosticar el promedio histórico para esa fecha. Captura estacionalidad pero no eventos específicos.
+
+-----------
+
 # **2.3 Geoestadística y teledetección**
 
 La geoestadística (Cressie & Wikle, 2011) permite modelar la dependencia espacial de las precipitaciones a través del variograma y la interpolación kriging. Por su parte, los datos de teledetección (CHIRPS, GPM, MODIS) complementan ERA5 aportando observaciones de mayor resolución. La combinación de ambos enfoques reduce incertidumbre y aumenta la fidelidad de los mapas de precipitación.
@@ -143,10 +229,11 @@ Validación del modelo en cuencas prioritarias para planificación hídrica y es
 
 | Fase              | Periodo              | Actividades principales                                          | Estado | Entregables                 |
 | ----------------- | -------------------- | ---------------------------------------------------------------- | ------ | --------------------------- |
-| Inicio y Revisión | 29 sep – 17 oct 2025 | Revisión literatura, descarga ERA5/CHIRPS, definición hipótesis. | ✅ Completada | Hito 1 (documento y pitch). |
-| Desarrollo 1      | 20 oct – 14 nov 2025 | Preprocesamiento geoestadístico, variogramas, mallas uniformes.  | ✅ Completada | Avance (Hito 2).            |
-| Desarrollo 2      | 17 nov – 12 dic 2025 | Implementación AE / DMD / KoVAE y validación con CHIRPS.         | 🔄 En progreso (50%) | Informe parcial (Hito 3).   |
-| Síntesis final    | 5 ene – 30 ene 2026  | Análisis de resultados, validación FlowHydro, defensa oral.      | ⏳ Pendiente | Hito 4 + Entrega final.     |
+| Inicio y Revisión | 29 sep – 17 oct 2025 | Revisión literatura, descarga ERA5/CHIRPS, definición hipótesis. | ✅ Completada (100%) | Hito 1 (documento y pitch). |
+| Desarrollo 1      | 20 oct – 14 nov 2025 | Preprocesamiento geoestadístico, variogramas, mallas uniformes.  | ✅ Completada (100%) | Avance (Hito 2).            |
+| Desarrollo 2      | 17 nov – 12 dic 2025 | Implementación AE+DMD baseline + optimización hiperparámetros.   | 🔄 En progreso (75%) | Informe parcial (Hito 3).   |
+| Desarrollo 3 (Opcional) | 17 nov – 12 dic 2025 | KoVAE, validación CHIRPS, análisis interpretabilidad DMD.  | ⏳ Pendiente (0%) | Experimentos adicionales.   |
+| Síntesis final    | 5 ene – 30 ene 2026  | Análisis de resultados, validación FlowHydro, defensa oral.      | ⏳ Pendiente (0%) | Hito 4 + Entrega final.     |
 
 ## **4.1 Progreso Detallado (Actualización: 19 Nov 2025)**
 
@@ -275,12 +362,14 @@ CAPSTONE_PROJECT/
 │   ├── processed/              # Datos normalizados, pickle results
 │   └── models/                 # Pesos entrenados (.h5)
 ├── notebooks/
-│   ├── 01_EDA.ipynb           # Análisis exploratorio
-│   ├── 01A_Eda_spatiotemporal.ipynb
-│   ├── 02_DL_DMD_Forecast.ipynb  # Geoestadística
-│   ├── 03_AE_DMD_Training.ipynb  # ✅ Modelo baseline
-│   ├── 04_Advanced_Metrics.ipynb # ✅ Evaluación avanzada
-│   └── 05_Hyperparameter_Experiments.ipynb  # ✅ Optimización
+│   ├── 01_EDA.ipynb           # Análisis exploratorio Chile
+│   ├── 01A_Eda_spatiotemporal.ipynb  # Patrones espaciotemporales
+│   ├── 02_DL_DMD_Forecast.ipynb  # 📚 Ejemplo Prof. Herrera (didáctico)
+│   ├── 02_Geoestadistica_Variogramas_Kriging.ipynb  # ✅ Variogramas implementados
+│   ├── 03_AE_DMD_Training.ipynb  # ✅ Modelo AE+DMD baseline
+│   ├── 04_Advanced_Metrics.ipynb # ✅ Evaluación avanzada (NSE, SS)
+│   ├── 04_KoVAE_Test.ipynb      # ⏳ KoVAE (preparado, no ejecutado)
+│   └── 05_Hyperparameter_Experiments.ipynb  # ✅ Optimización (13 configs)
 ├── src/
 │   ├── models/                 # ae_dmd.py, kovae.py
 │   └── utils/                  # metrics.py, data_loader.py
@@ -297,12 +386,14 @@ CAPSTONE_PROJECT/
 |----------|--------|--------|-----------|
 | 01_EDA.ipynb | 45 | ✅ Completo | Análisis exploratorio Chile |
 | 01A_Eda_spatiotemporal.ipynb | 38 | ✅ Completo | Patrones espacio-temporales |
-| 02_DL_DMD_Forecast.ipynb | 42 | ✅ Completo | Geoestadística y variogramas |
-| 03_AE_DMD_Training.ipynb | 52 | ✅ Completo | Modelo baseline + forecasting |
+| 02_DL_DMD_Forecast.ipynb | 12 | 📚 Referencia | **Ejemplo Prof. Herrera (didáctico)** |
+| 02_Geoestadistica_Variogramas_Kriging.ipynb | 42 | ✅ Completo | **Variogramas + Kriging implementados** |
+| 03_AE_DMD_Training.ipynb | 52 | ✅ Completo | Modelo AE+DMD baseline + forecasting |
 | 04_Advanced_Metrics.ipynb | 16 | ✅ Completo | Métricas avanzadas NSE, SS |
+| 04_KoVAE_Test.ipynb | ~30 | ⏳ Preparado | **KoVAE (opcional, no ejecutado)** |
 | 05_Hyperparameter_Experiments.ipynb | 19 | ✅ Completo | **Grid search (13 configs)** |
 
-**Total:** 212 celdas de código implementadas, ~195 ejecutadas exitosamente.
+**Total:** ~254 celdas totales, **212 implementadas y ejecutadas** exitosamente (~83%).
 
 -----------
 
