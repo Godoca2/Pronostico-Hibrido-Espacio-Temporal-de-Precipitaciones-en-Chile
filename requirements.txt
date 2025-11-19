@@ -7,3 +7,5 @@ matplotlib
 torch
 mlflow
 jupyter
+scikit-gstat
+pykrige
