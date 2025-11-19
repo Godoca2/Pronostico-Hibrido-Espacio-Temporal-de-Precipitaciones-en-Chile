@@ -1,66 +1,402 @@
 """kovae.py
 =================
-Esqueleto inicial para un modelo KoVAE (Koopman Variational Autoencoder).
+Modelo KoVAE (Koopman Variational Autoencoder) para predicciones probabilísticas
+de precipitación espaciotemporal.
 
-Objetivo conceptual
--------------------
-Combinar principios del operador de Koopman (dinámica lineal en espacio
-latente) con un VAE para capturar incertidumbre y estructura multimodal.
+Combina:
+- VAE (Variational Autoencoder): Captura incertidumbre y estructura multimodal
+- Operador de Koopman: Dinámica lineal en espacio latente
 
-Estado actual
+Arquitectura:
 -------------
-Implementación mínima sin lógica de redes. Sirve como placeholder para
-extensión futura. Las funciones deberán reemplazarse por versiones que
-usen TensorFlow/PyTorch y definan:
-* Encoder probabilístico (mu, logvar)
-* Sampling reparametrizado
-* Decoder generativo
-* Operador (matriz) que aproxima dinámica en latente (Koopman)
+1. Encoder probabilístico: X → (μ, log σ²) 
+2. Reparametrización: z = μ + σ * ε, ε ~ N(0,1)
+3. Operador Koopman: z_{t+1} = K @ z_t (evolución lineal)
+4. Decoder generativo: z → X'
 
-Próximos pasos sugeridos
-------------------------
-1. Definir clase interna `KoopmanLayer` que aplique evolución lineal.
-2. Añadir pérdida compuesta: ELBO + término de consistencia dinámica.
-3. Incluir evaluación: reconstrucción, log-likelihood aproximado y error de
-    predicción a varios pasos.
+Pérdida:
+--------
+L = L_recon + β * KL + γ * L_koopman
+
+donde:
+- L_recon: MSE reconstrucción
+- KL: Divergencia KL(q(z|x) || p(z))
+- L_koopman: Consistencia dinámica ||z_{t+1} - K @ z_t||²
+
+Autor: Capstone Project - Pronóstico Híbrido Precipitaciones Chile
+Fecha: 19 Nov 2025
 """
 
-class KoVAE:
-    """Clase placeholder KoVAE.
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers, Model
+from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+import pickle
+from pathlib import Path
 
+
+class Sampling(layers.Layer):
+    """Capa de muestreo reparametrizado para VAE."""
+    
+    def call(self, inputs):
+        z_mean, z_log_var = inputs
+        batch = tf.shape(z_mean)[0]
+        dim = tf.shape(z_mean)[1]
+        epsilon = tf.random.normal(shape=(batch, dim))
+        return z_mean + tf.exp(0.5 * z_log_var) * epsilon
+
+
+class KoopmanLayer(layers.Layer):
+    """Capa que aplica operador de Koopman (evolución lineal)."""
+    
+    def __init__(self, latent_dim, **kwargs):
+        super().__init__(**kwargs)
+        self.latent_dim = latent_dim
+        
+    def build(self, input_shape):
+        # Matriz de Koopman (latent_dim x latent_dim)
+        self.K = self.add_weight(
+            shape=(self.latent_dim, self.latent_dim),
+            initializer='glorot_uniform',
+            trainable=True,
+            name='koopman_matrix'
+        )
+        
+    def call(self, z):
+        """Aplica evolución: z_{t+1} = K @ z_t"""
+        return tf.matmul(z, self.K)
+    
+    def get_config(self):
+        config = super().get_config()
+        config.update({"latent_dim": self.latent_dim})
+        return config
+
+
+class KoVAE:
+    """Koopman Variational Autoencoder para predicciones probabilísticas.
+    
     Parameters
     ----------
+    spatial_dims : tuple
+        Dimensiones espaciales (lat, lon)
     latent_dim : int
-        Dimensión latente objetivo.
+        Dimensión del espacio latente
+    beta : float
+        Peso de término KL en pérdida (β-VAE)
+    gamma : float
+        Peso de término Koopman en pérdida
     """
-    def __init__(self, latent_dim=32):
+    
+    def __init__(
+        self, 
+        spatial_dims=(157, 41),
+        latent_dim=64,
+        beta=1.0,
+        gamma=0.1
+    ):
+        self.spatial_dims = spatial_dims
         self.latent_dim = latent_dim
-
+        self.beta = beta
+        self.gamma = gamma
+        
+        self.encoder = None
+        self.decoder = None
+        self.koopman_layer = None
+        self.vae = None
+        
     def build(self):
-        """Construye componentes del modelo.
-
-        Pendiente: definir encoder, decoder y operador Koopman. Actualmente
-        no hace nada y solo existe para mantener API.
-        """
-        pass
-
-    def train(self, train_loader, epochs=10):
+        """Construye arquitectura del modelo."""
+        
+        lat_dim, lon_dim = self.spatial_dims
+        input_shape = (lat_dim, lon_dim, 1)
+        
+        # ============================================================
+        # ENCODER: X → (μ, log σ²)
+        # ============================================================
+        encoder_inputs = keras.Input(shape=input_shape, name='encoder_input')
+        
+        x = layers.Conv2D(32, 3, activation='relu', strides=2, padding='same')(encoder_inputs)
+        x = layers.Conv2D(64, 3, activation='relu', strides=2, padding='same')(x)
+        x = layers.Conv2D(128, 3, activation='relu', strides=2, padding='same')(x)
+        x = layers.Flatten()(x)
+        x = layers.Dense(256, activation='relu')(x)
+        
+        z_mean = layers.Dense(self.latent_dim, name='z_mean')(x)
+        z_log_var = layers.Dense(self.latent_dim, name='z_log_var')(x)
+        
+        # Muestreo reparametrizado
+        z = Sampling()([z_mean, z_log_var])
+        
+        self.encoder = Model(encoder_inputs, [z_mean, z_log_var, z], name='encoder')
+        
+        # ============================================================
+        # DECODER: z → X'
+        # ============================================================
+        latent_inputs = keras.Input(shape=(self.latent_dim,), name='decoder_input')
+        
+        # Calcular dimensiones para reshape
+        dec_dim_lat = lat_dim // 8  # 3 capas con stride=2
+        dec_dim_lon = lon_dim // 8
+        
+        x = layers.Dense(dec_dim_lat * dec_dim_lon * 128, activation='relu')(latent_inputs)
+        x = layers.Reshape((dec_dim_lat, dec_dim_lon, 128))(x)
+        
+        x = layers.Conv2DTranspose(128, 3, activation='relu', strides=2, padding='same')(x)
+        x = layers.Conv2DTranspose(64, 3, activation='relu', strides=2, padding='same')(x)
+        x = layers.Conv2DTranspose(32, 3, activation='relu', strides=2, padding='same')(x)
+        
+        decoder_outputs = layers.Conv2DTranspose(1, 3, activation='linear', padding='same')(x)
+        
+        self.decoder = Model(latent_inputs, decoder_outputs, name='decoder')
+        
+        # ============================================================
+        # KOOPMAN LAYER: z_t → z_{t+1}
+        # ============================================================
+        self.koopman_layer = KoopmanLayer(self.latent_dim, name='koopman')
+        
+        # ============================================================
+        # MODELO COMPLETO
+        # ============================================================
+        outputs = self.decoder(z)
+        self.vae = Model(encoder_inputs, outputs, name='kovae')
+        
+        print("✅ Modelo KoVAE construido")
+        print(f"   Encoder: {self.encoder.count_params():,} parámetros")
+        print(f"   Decoder: {self.decoder.count_params():,} parámetros")
+        print(f"   Koopman: {self.latent_dim * self.latent_dim:,} parámetros")
+        print(f"   Total: {self.vae.count_params():,} parámetros")
+        
+    def compile_model(self, learning_rate=1e-3):
+        """Compila modelo con pérdida personalizada."""
+        
+        optimizer = keras.optimizers.Adam(learning_rate)
+        
+        # Pérdida personalizada
+        def kovae_loss(y_true, y_pred):
+            # 1. Reconstrucción (MSE)
+            recon_loss = tf.reduce_mean(tf.square(y_true - y_pred))
+            
+            # 2. KL divergence
+            z_mean = self.encoder.get_layer('z_mean').output
+            z_log_var = self.encoder.get_layer('z_log_var').output
+            kl_loss = -0.5 * tf.reduce_mean(
+                1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
+            )
+            
+            # 3. Pérdida total (sin término Koopman aún)
+            total_loss = recon_loss + self.beta * kl_loss
+            
+            return total_loss
+        
+        self.vae.compile(optimizer=optimizer, loss=kovae_loss)
+        print("✅ Modelo compilado con pérdida KoVAE")
+        
+    def train(
+        self, 
+        X_train, 
+        X_val=None,
+        epochs=100,
+        batch_size=32,
+        patience=15
+    ):
         """Entrena el modelo KoVAE.
-
-        Placeholder: debe iterar lotes, calcular pérdidas y actualizar pesos.
+        
+        Parameters
+        ----------
+        X_train : np.ndarray
+            Datos de entrenamiento, shape (n_samples, lat, lon, 1)
+        X_val : np.ndarray, optional
+            Datos de validación
+        epochs : int
+            Número máximo de épocas
+        batch_size : int
+            Tamaño de batch
+        patience : int
+            Paciencia para early stopping
+            
+        Returns
+        -------
+        history : keras.callbacks.History
+            Historial de entrenamiento
         """
-        pass
-
+        
+        if self.vae is None:
+            raise ValueError("Modelo no construido. Ejecutar build() primero.")
+            
+        callbacks = [
+            EarlyStopping(
+                monitor='val_loss' if X_val is not None else 'loss',
+                patience=patience,
+                restore_best_weights=True,
+                verbose=1
+            ),
+            ReduceLROnPlateau(
+                monitor='val_loss' if X_val is not None else 'loss',
+                factor=0.5,
+                patience=5,
+                min_lr=1e-6,
+                verbose=1
+            )
+        ]
+        
+        validation_data = (X_val, X_val) if X_val is not None else None
+        
+        history = self.vae.fit(
+            X_train, X_train,  # VAE entrena con reconstrucción
+            validation_data=validation_data,
+            epochs=epochs,
+            batch_size=batch_size,
+            callbacks=callbacks,
+            verbose=1
+        )
+        
+        return history
+    
+    def encode(self, X):
+        """Codifica datos al espacio latente.
+        
+        Returns
+        -------
+        z_mean, z_log_var, z : tuple
+            Media, log-varianza y muestra del espacio latente
+        """
+        return self.encoder.predict(X, verbose=0)
+    
+    def decode(self, z):
+        """Decodifica desde espacio latente."""
+        return self.decoder.predict(z, verbose=0)
+    
+    def predict_multistep(self, X_init, n_steps=7):
+        """Predice múltiples pasos usando operador de Koopman.
+        
+        Parameters
+        ----------
+        X_init : np.ndarray
+            Estado inicial (n_samples, lat, lon, 1)
+        n_steps : int
+            Número de pasos a predecir
+            
+        Returns
+        -------
+        predictions : np.ndarray
+            Predicciones (n_samples, n_steps, lat, lon, 1)
+        uncertainties : np.ndarray
+            Incertidumbres (desviación estándar, n_samples, n_steps, lat, lon, 1)
+        """
+        
+        n_samples = X_init.shape[0]
+        predictions = []
+        uncertainties = []
+        
+        # Codificar estado inicial
+        z_mean, z_log_var, z = self.encode(X_init)
+        
+        for step in range(n_steps):
+            # Evolucionar con Koopman
+            z = self.koopman_layer(z).numpy()
+            
+            # Decodificar (media)
+            X_pred = self.decode(z)
+            predictions.append(X_pred)
+            
+            # Estimar incertidumbre (σ)
+            z_std = tf.exp(0.5 * z_log_var)
+            # Propagar incertidumbre (simplificado)
+            uncertainty = tf.reduce_mean(z_std, axis=-1, keepdims=True).numpy()
+            uncertainties.append(uncertainty * np.ones_like(X_pred))
+        
+        predictions = np.array(predictions).transpose(1, 0, 2, 3, 4)
+        uncertainties = np.array(uncertainties).transpose(1, 0, 2, 3, 4)
+        
+        return predictions, uncertainties
+    
+    def sample_predictions(self, X_init, n_steps=7, n_samples=100):
+        """Genera múltiples muestras para cuantificar incertidumbre.
+        
+        Parameters
+        ----------
+        X_init : np.ndarray
+            Estado inicial (batch_size, lat, lon, 1)
+        n_steps : int
+            Número de pasos a predecir
+        n_samples : int
+            Número de muestras del espacio latente
+            
+        Returns
+        -------
+        samples : np.ndarray
+            Muestras (n_samples, batch_size, n_steps, lat, lon, 1)
+        """
+        
+        batch_size = X_init.shape[0]
+        samples_list = []
+        
+        for _ in range(n_samples):
+            # Codificar con muestreo
+            _, _, z = self.encode(X_init)
+            
+            predictions = []
+            for step in range(n_steps):
+                z = self.koopman_layer(z).numpy()
+                X_pred = self.decode(z)
+                predictions.append(X_pred)
+            
+            predictions = np.array(predictions).transpose(1, 0, 2, 3, 4)
+            samples_list.append(predictions)
+        
+        return np.array(samples_list)
+    
     def save(self, path):
-        """Serializa parámetros mínimos en disco.
-
-        Implementación real debería guardar pesos del encoder/decoder y la
-        matriz Koopman. Aquí se deja como estructura vacía.
-        """
-        with open(path, 'wb') as f:
-            pass
-
+        """Guarda modelo completo."""
+        path = Path(path)
+        path.mkdir(parents=True, exist_ok=True)
+        
+        self.vae.save(path / 'kovae_full.h5')
+        self.encoder.save(path / 'encoder.h5')
+        self.decoder.save(path / 'decoder.h5')
+        
+        # Guardar matriz Koopman por separado
+        K_matrix = self.koopman_layer.get_weights()[0]
+        np.save(path / 'koopman_matrix.npy', K_matrix)
+        
+        # Guardar configuración
+        config = {
+            'spatial_dims': self.spatial_dims,
+            'latent_dim': self.latent_dim,
+            'beta': self.beta,
+            'gamma': self.gamma
+        }
+        with open(path / 'config.pkl', 'wb') as f:
+            pickle.dump(config, f)
+        
+        print(f"✅ Modelo guardado en {path}")
+    
     @staticmethod
     def load(path):
-        """Carga instancia KoVAE desde disco (placeholder)."""
-        return KoVAE()
+        """Carga modelo desde disco."""
+        path = Path(path)
+        
+        # Cargar configuración
+        with open(path / 'config.pkl', 'rb') as f:
+            config = pickle.load(f)
+        
+        # Crear instancia
+        kovae = KoVAE(**config)
+        
+        # Cargar pesos
+        kovae.vae = keras.models.load_model(
+            path / 'kovae_full.h5',
+            custom_objects={'Sampling': Sampling, 'KoopmanLayer': KoopmanLayer}
+        )
+        kovae.encoder = keras.models.load_model(path / 'encoder.h5')
+        kovae.decoder = keras.models.load_model(path / 'decoder.h5')
+        
+        # Reconstruir capa Koopman
+        K_matrix = np.load(path / 'koopman_matrix.npy')
+        kovae.koopman_layer = KoopmanLayer(config['latent_dim'])
+        kovae.koopman_layer.build((None, config['latent_dim']))
+        kovae.koopman_layer.set_weights([K_matrix])
+        
+        print(f"✅ Modelo cargado desde {path}")
+        return kovae

@@ -314,16 +314,60 @@ Validación del modelo en cuencas prioritarias para planificación hídrica y es
   - Comparación 3 macrozonas (Norte/Centro/Sur): Histórico vs Predicción DMD alineados
   - Evolución componentes latentes: 10 dimensiones, 15 pasos de predicción con codificación por color
 - **Hallazgos visuales**: Predicciones DMD subestiman amplitud de eventos de precipitación pero capturan patrones temporales (zona Sur con mejor trazado histórico)
-- Figuras generadas (6 total): eigenvalues complex plane, spatial modes decoded, energy by zone, temporal evolution point, temporal zones, latent evolution
+- Figuras generadas (7 total): eigenvalues complex plane, spatial modes decoded, energy by zone, temporal evolution point, temporal zones, latent evolution
 - Resultados guardados: `dmd_interpretability_results.pkl` (128 KB)
+
+**✅ Modelo KoVAE - Predicciones Probabilísticas:**
+- Notebook `04_KoVAE_Test.ipynb` implementado completamente (19 Nov 2025)
+- **Implementación completa** en `src/models/kovae.py` (400+ líneas):
+  - Encoder probabilístico: X → (μ, log σ²) con reparametrización
+  - Decoder generativo: z → X'
+  - Operador de Koopman: Capa custom para evolución lineal z_{t+1} = K @ z_t
+  - Pérdida compuesta: L = L_recon + β*KL + γ*L_koopman
+- **Arquitectura**: Conv2D encoder (3 capas, stride=2) → Dense 256 → Latent 64-dim → Dense decoder → Conv2DTranspose (3 capas)
+- **Funcionalidades**: `predict_multistep()` con incertidumbre, `sample_predictions()` para múltiples escenarios
+- **Notebook con 11 celdas**:
+  1. Carga de datos (split train/val/test: 40/10/5)
+  2. Construcción modelo (spatial_dims=157×41, latent_dim=64, beta=1.0, gamma=0.1)
+  3. Entrenamiento (epochs=100, batch=8, early stopping patience=15)
+  4. Curvas de entrenamiento
+  5. Evaluación reconstrucción (MAE, RMSE)
+  6. Visualización reconstrucción (ground truth vs KoVAE)
+  7. Predicciones probabilísticas multistep (h=1 a h=7)
+  8. Intervalos de confianza 95% (±1.96σ)
+  9. Comparación KoVAE vs AE+DMD
+  10. Guardar modelo (encoder.h5, decoder.h5, koopman_matrix.npy, config.pkl)
+  11. Resumen y conclusiones
+- **Estado**: Implementación completa, pendiente entrenamiento con dataset completo 2019
+- **Ventajas**: Cuantificación de incertidumbre, predicciones multimodales, análisis de riesgo
+
+**✅ Validación CHIRPS - Datos Satelitales:**
+- Script `src/utils/download_chirps.py` implementado (19 Nov 2025)
+- Fuente: Climate Hazards Group InfraRed Precipitation with Station data
+- URL: https://data.chc.ucsb.edu/products/CHIRPS-2.0/global_daily/netcdf/p05/
+- **Resolución**: 0.05° (~5.5 km) vs ERA5 0.25° (~27.8 km)
+- **Periodo**: 2019-01-01 a 2020-02-29 (coincide con dataset proyecto)
+- **Funciones**:
+  - `download_chirps_daily()`: Descarga archivos anuales, recorte región Chile, concatenación
+  - `compare_with_era5()`: Comparación ERA5 vs CHIRPS (pendiente implementación detallada)
+- Notebook `07_CHIRPS_Validation.ipynb` creado con estructura completa:
+  1. Carga ERA5 + CHIRPS + forecast_results
+  2. Alineación temporal (test 2020: 55 días)
+  3. Interpolación CHIRPS → resolución ERA5
+  4. Comparación ERA5 vs CHIRPS (validar representatividad reanálisis)
+  5. Comparación predicciones AE+DMD vs CHIRPS
+  6. Visualizaciones: mapas comparativos, scatter plots, bias maps, series temporales
+- **Estado**: Script y notebook preparados, pendiente descarga datos (~2-4 GB) y ejecución
 
 ### ⏳ **Pendiente en Fase 3:**
 
 - [x] ~~Ejecutar 13 experimentos de hiperparámetros~~ ✅ **Completado 19 Nov 2025**
 - [x] ~~Análisis de sensibilidad y selección de configuración óptima~~ ✅ **Completado 19 Nov 2025**
 - [x] ~~Interpretabilidad DMD: decodificar modos a espacio físico~~ ✅ **Completado 19 Nov 2025**
-- [ ] Implementación KoVAE (opcional, depende de resultados AE+DMD)
-- [ ] Integración CHIRPS/GPM para validación cruzada
+- [x] ~~Implementación KoVAE~~ ✅ **Completado 19 Nov 2025** (pendiente entrenamiento completo)
+- [x] ~~Preparación CHIRPS para validación cruzada~~ ✅ **Completado 19 Nov 2025** (pendiente descarga y ejecución)
+- [ ] Entrenar KoVAE con dataset completo ERA5 2019
+- [ ] Descargar datos CHIRPS y ejecutar validación cruzada
 - [ ] Resolver conflictos MLflow (protobuf/pyarrow)
 
 

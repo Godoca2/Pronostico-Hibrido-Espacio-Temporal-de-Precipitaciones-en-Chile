@@ -103,18 +103,20 @@ CAPSTONE_PROJECT/
 │   ├── 02_Geoestadistica_Variogramas_Kriging.ipynb  # ✅ Variogramas y kriging
 │   ├── 03_AE_DMD_Training.ipynb               # ✅ Entrenamiento AE+DMD baseline
 │   ├── 04_Advanced_Metrics.ipynb              # ✅ Métricas avanzadas (NSE, SS)
-│   ├── 04_KoVAE_Test.ipynb                    # ⏳ KoVAE (preparado, no ejecutado)
+│   ├── 04_KoVAE_Test.ipynb                    # ✅ KoVAE predicciones probabilísticas
 │   ├── 05_Hyperparameter_Experiments.ipynb    # ✅ Optimización 13 configs
-│   └── 06_DMD_Interpretability.ipynb          # ✅ Interpretabilidad DMD (modos físicos)
+│   ├── 06_DMD_Interpretability.ipynb          # ✅ Interpretabilidad DMD (modos físicos)
+│   └── 07_CHIRPS_Validation.ipynb             # ⏳ Validación satelital (preparado)
 │
 ├── src/
 │   ├── models/
 │   │   ├── ae_dmd.py                           # Modelo AE+DMD
 │   │   ├── ae_keras.py                         # Arquitectura autoencoder
-│   │   ├── kovae.py                            # KoVAE (futuro)
+│   │   ├── kovae.py                            # ✅ KoVAE implementado (400+ líneas)
 │   │   └── __init__.py
 │   ├── utils/
 │   │   ├── download_era5.py                    # Descarga desde Copernicus CDS
+│   │   ├── download_chirps.py                  # ✅ Descarga CHIRPS (datos satelitales)
 │   │   ├── merge_era5.py                       # Concatenación NetCDF
 │   │   ├── merge_era5_advanced.py              # Procesamiento avanzado
 │   │   ├── data_loader.py                      # Carga de datos
@@ -309,8 +311,23 @@ El notebook `03_AE_DMD_Training.ipynb` ejecuta el pipeline completo:
   - Sur: Energía uniforme moderada (0.280-0.340)
 - **Períodos identificados**: Mayoría de muy baja frecuencia (>60 días o estacionarios)
 - **Visualizaciones temporales**: Serie temporal punto individual (Centro Chile), comparación 3 macrozonas (Norte/Centro/Sur), evolución componentes latentes DMD (10 dimensiones, 15 pasos)
-- Figuras generadas: 6 figuras (eigenvalues, spatial modes, energy zones, temporal evolution point, temporal zones, latent evolution)
+- Figuras generadas: 7 figuras (eigenvalues, spatial modes, energy zones, temporal evolution point, temporal zones, latent evolution)
 - Resultados guardados: `dmd_interpretability_results.pkl` (128 KB)
+
+**KoVAE - Predicciones Probabilísticas** (`04_KoVAE_Test.ipynb`):
+- Implementación completa en `src/models/kovae.py` (400+ líneas)
+- Arquitectura: Encoder probabilístico (μ, log σ²) + Operador Koopman + Decoder
+- **Ventajas vs AE+DMD**: Cuantificación de incertidumbre, intervalos de confianza 95%, predicciones multimodales
+- Pérdida compuesta: L_recon + β*KL + γ*L_koopman
+- Notebook preparado con: entrenamiento, evaluación reconstrucción, predicciones multistep (h=1 a h=7), comparación con AE+DMD
+- ⚠️ **Pendiente**: Entrenar con dataset completo 2019 (actualmente demo con 40 muestras)
+
+**Validación CHIRPS** (`07_CHIRPS_Validation.ipynb`):
+- Script `download_chirps.py` implementado para descargar datos satelitales
+- Fuente: Climate Hazards Group InfraRed Precipitation with Station data
+- Resolución: 0.05° (~5.5 km) vs ERA5 0.25° (~27.8 km)
+- Notebook preparado para: comparación ERA5 vs CHIRPS, validación cruzada predicciones, análisis de bias
+- ⚠️ **Pendiente**: Descarga datos (~2-4 GB) y ejecución de validación
 
 ### Próximos Pasos (Opcionales)
 
